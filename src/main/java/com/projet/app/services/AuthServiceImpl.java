@@ -1,7 +1,8 @@
 //Implémentation du service de création d'utilisateur, incluant le hachage du mot de passe.
 package com.projet.app.services;
 
-import org.springframework.beans.BeanUtils;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,36 +25,65 @@ public class AuthServiceImpl implements AuthService{
 		this.passwordEncoder = passwordEncoder;
 	}
 
-	@Override
-    public DBUser createUser(SignUpRequest signupRequest) {//signuprequest contient les infos d'utilisateur a creer
-        //Check if customer already exist
-        if (dbUserRepository.existsByEmail(signupRequest.getEmail())) {
-            return null;
-        }
-        DBUser user = new DBUser();
-        
-        
-        
-        user.setName(signupRequest.getName());
-        user.setEmail(signupRequest.getEmail());
-        
-        
-        dbUserRepository.save(user); // Hibernate gérera les deux tables
-
-        BeanUtils.copyProperties(signupRequest,user);//copier les propriétés de l'objet signupRequest vers l'objet user.
-
-        Profile profile = signupRequest.getProfile(); // Rôle transmis via SignUpRequest
-        if (profile == null || profile.getRole() == null) {
-            profile = new Profile("user"); // Rôle par défaut
-        }
-        user.setProfile(profile);
-        
-        //Hash the password before saving
-        String hashPassword = passwordEncoder.encode(signupRequest.getPassword());
-        user.setPassword(hashPassword);
-        dbUserRepository.save(user);
-        return user;
 	
+	@Override
+	public DBUser createUser(SignUpRequest signupRequest) {
+	    if (dbUserRepository.existsByEmail(signupRequest.getEmail())) {
+	        return null;
+	    }
+	    DBUser user = new DBUser();
+	    user.setName(signupRequest.getName());
+	    user.setEmail(signupRequest.getEmail());
+	    
+	        // Gérer le cas où le numéro de téléphone est invalide
+	    	user.setPhoneNumber(signupRequest.getPhoneNumber()); // Ajouter le numéro de téléphone
+
+	    
+
+	    
+	    Profile profile = signupRequest.getProfile();
+	    if (profile == null || profile.getRole() == null) {
+	        profile = new Profile("user");
+	    }
+	    user.setProfile(profile);
+
+	    String hashPassword = passwordEncoder.encode(signupRequest.getPassword());
+	    user.setPassword(hashPassword);
+
+	    dbUserRepository.save(user);
+	    return user;
 	}
+
+	
+	@Override
+	public List<DBUser> getAllUsers() {
+	    return dbUserRepository.findAll();
+	}
+
+
+    // Lire un utilisateur par ID
+    public DBUser getUserById(Long id) {
+        return dbUserRepository.findById(id).orElse(null);
+    }
+
+    // Mettre à jour un utilisateur
+    public DBUser updateUser(Long id, DBUser updatedUser) {
+        DBUser existingUser = dbUserRepository.findById(id).orElse(null);
+        if (existingUser != null) {
+            existingUser.setName(updatedUser.getName());
+            existingUser.setEmail(updatedUser.getEmail());
+            existingUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+            existingUser.setPhoneNumber(updatedUser.getPhoneNumber());
+            existingUser.setStructure(updatedUser.getStructure());
+            existingUser.setProfile(updatedUser.getProfile());
+            return dbUserRepository.save(existingUser);
+        }
+        return null;
+    }
+
+    // Supprimer un utilisateur
+    public void deleteUser(Long id) {
+        dbUserRepository.deleteById(id);
+    }
 	
 }

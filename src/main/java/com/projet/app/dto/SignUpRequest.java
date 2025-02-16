@@ -9,7 +9,16 @@ public class SignUpRequest {
     private String password;
     private String name;
     private Profile profile;
+    private String phoneNumber;
 
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+    
     // Getter for email
     public String getEmail() {
         return email;
@@ -44,10 +53,11 @@ public class SignUpRequest {
     }
 
     // Constructor with all arguments
-    public SignUpRequest(String email, String password, String name, String role) {
+    public SignUpRequest(String email, String password, String name, String role,String phoneNumber) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.profile= new Profile(role);
+        this.phoneNumber=phoneNumber;
     }
 }

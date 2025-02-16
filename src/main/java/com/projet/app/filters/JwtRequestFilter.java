@@ -1,7 +1,7 @@
-// Filtre des requêtes HTTP pour vérifier la présence et la validité du token JWT dans l'en-tête Authorization et authentifie l'utilisateur.
 package com.projet.app.filters;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,55 +22,76 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-public class JwtRequestFilter extends OncePerRequestFilter{
-	
-	private final DBUserServiceImpl dbUserServiceImpl;
-	private final JwtUtil jwtUtil;
-	@Autowired
-	public JwtRequestFilter(DBUserServiceImpl dbUserServiceImpl, JwtUtil jwtUtil) {
-		this.dbUserServiceImpl = dbUserServiceImpl;
-		this.jwtUtil = jwtUtil;
-		
-    
-	}
-	
-	
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) 
-	        throws ServletException, IOException {
-	    String authHeader = request.getHeader("Authorization");
-	    String token = null;
-	    String username = null;
+public class JwtRequestFilter extends OncePerRequestFilter {
 
-	    if (authHeader != null && authHeader.startsWith("Bearer ")) {
-	        token = authHeader.substring(7); // Extrait le token après le préfixe "Bearer "
-	        username = jwtUtil.extractUsername(token);
-	    }
+    private static final List<String> PUBLIC_ENDPOINTS = Arrays.asList(
+        "/signup", "/login", "/validateCaptcha", "/register"
+    ); // Liste des routes publiques à exclure du filtrage
 
-	    if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-	        UserDetails userDetails = dbUserServiceImpl.loadUserByUsername(username);
+    private final DBUserServiceImpl dbUserServiceImpl;
+    private final JwtUtil jwtUtil;
 
-	        if (jwtUtil.validateToken(token, userDetails)) {
-	            // Récupération du rôle depuis le token
-	            String role = jwtUtil.extractRole(token);
-
-	            // Configuration des autorisations à partir du rôle
-	            GrantedAuthority authority = () -> role;
-	            UsernamePasswordAuthenticationToken authenticationToken = 
-	                new UsernamePasswordAuthenticationToken(userDetails, null, List.of(authority));
-
-	            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-	            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-	        }
-	    }
-
-	    filterChain.doFilter(request, response);
-	}
-
-        //Après avoir effectué l'authentification, le filtre passe la requête au prochain filtre dans la chaîne de filtres pour que l'application puisse continuer à traiter la requête.
+    @Autowired
+    public JwtRequestFilter(DBUserServiceImpl dbUserServiceImpl, JwtUtil jwtUtil) {
+        this.dbUserServiceImpl = dbUserServiceImpl;
+        this.jwtUtil = jwtUtil;
     }
-	
-	//Ce filtre intercepte chaque requête HTTP, extrait le token JWT de l'en-tête Authorization, valide ce token en utilisant JwtUtil, et si le token est valide, il authentifie l'utilisateur en plaçant les informations de sécurité dans le contexte de sécurité (SecurityContextHolder). Cela permet à Spring Security de savoir qu'il s'agit d'un utilisateur authentifié et d'accorder ou refuser l'accès aux ressources en fonction des autorisations de cet utilisateur.
-	
-	
 
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        String path = request.getRequestURI();
+        if (isPublicEndpoint(path)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String authHeader = request.getHeader("Authorization");
+        String token = null;
+        String username = null;
+
+        // Vérifie si l'en-tête Authorization contient un token valide
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7); // Extrait le token après "Bearer "
+            try {
+                username = jwtUtil.extractUsername(token); // Extrait le username du token
+            } catch (Exception e) {
+                // Log en cas d'échec d'extraction du username
+                System.err.println("Échec lors de l'extraction du username du token JWT : " + e.getMessage());
+            }
+        }
+
+        // Si un username a été extrait et qu'il n'est pas encore authentifié
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = dbUserServiceImpl.loadUserByUsername(username);
+
+            // Valide le token
+            if (jwtUtil.validateToken(token, userDetails)) {
+                String role = jwtUtil.extractRole(token); // Récupère le rôle depuis le token
+                GrantedAuthority authority = () -> role;
+
+                // Crée un token d'authentification pour Spring Security
+                UsernamePasswordAuthenticationToken authenticationToken = 
+                    new UsernamePasswordAuthenticationToken(userDetails, null, List.of(authority));
+
+                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            }
+        }else if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // Si le token est manquant ou mal formé, passer à la requête suivante sans authentifier
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing or invalid Authorization header.");
+            return; // Stopper l'exécution et retourner une réponse 401 Unauthorized
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Vérifie si une route fait partie des points d'accès publics
+     * @param path Chemin de la requête
+     * @return true si la route est publique, sinon false
+     */
+    private boolean isPublicEndpoint(String path) {
+        return PUBLIC_ENDPOINTS.contains(path);
+    }
+}

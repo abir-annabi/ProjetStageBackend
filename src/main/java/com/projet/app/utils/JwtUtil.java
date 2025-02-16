@@ -7,9 +7,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+
+import com.projet.app.models.DBUser;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -19,8 +22,8 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtil {
-	 public static final String SECRET = "59703373367639792F423F4528482B4D6251655468576D5A713474375367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
-
+	@Value("${jwt.secret}")
+	private String secret;
 	    public String extractUsername(String token) {
 	        return extractClaim(token, Claims::getSubject);
 	    }
@@ -36,7 +39,7 @@ public class JwtUtil {
 	        return extractClaim(token, Claims::getExpiration);
 	    }
 	    //extractExpiration : Récupère la date d'expiration du token.
-
+	    
 	    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
 	        final Claims claims = extractAllClaims(token);
 	        return claimsResolver.apply(claims);
@@ -59,17 +62,30 @@ public class JwtUtil {
 
 
 	    public String generateToken(UserDetails userDetails) {
+	        // Assurez-vous que l'objet userDetails est bien une instance de DBUser
+	        DBUser user = (DBUser) userDetails; // Cast vers DBUser pour accéder aux propriétés spécifiques
+
 	        Map<String, Object> claims = new HashMap<>();
 	        // Ajouter le rôle aux revendications
-	       
 	        String role = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .findFirst() // Prendre le premier rôle (seul rôle)
-                    .orElse("user"); // Valeur par défaut si aucun rôle trouvé (par exemple, ROLE_USER)
+	                .map(GrantedAuthority::getAuthority)
+	                .findFirst() // Prendre le premier rôle (seul rôle)
+	                .orElse("user"); // Valeur par défaut si aucun rôle trouvé (par exemple, ROLE_USER)
 
-             claims.put("role", role);
-	        
+	        // Ajouter les informations de l'utilisateur (email et numéro de téléphone) aux revendications
+	        claims.put("role", role);
+	        claims.put("email", user.getEmail());        // Utilisez getEmail() pour obtenir l'email
+	        claims.put("phoneNumber", user.getPhoneNumber());  // Utilisez getPhoneNumber() pour obtenir le numéro de téléphone
+
 	        return createToken(claims, userDetails.getUsername());
+	    }
+
+	    public String extractEmail(String token) {
+	        return extractClaim(token, claims -> claims.get("email", String.class));
+	    }
+
+	    public String extractPhoneNumber(String token) {
+	        return extractClaim(token, claims -> claims.get("phoneNumber", String.class));
 	    }
 
 	    
@@ -89,11 +105,13 @@ public class JwtUtil {
 	    //La date d'expiration (30 minutes ici).
 	    //La signature HMAC-SHA256 avec la clé secrète.
 
-
+	    
 	    private Key getSignKey() {
-	        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
+	        byte[] keyBytes = Decoders.BASE64.decode(secret);
 	        return Keys.hmacShaKeyFor(keyBytes);
-	    }//Décodage de la clé secrète en base64
+	    }
+
+	  
 	    
 	    
 }

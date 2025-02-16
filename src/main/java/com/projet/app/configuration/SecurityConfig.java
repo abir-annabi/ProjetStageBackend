@@ -1,12 +1,10 @@
-//Configure la sécurité de l'application, incluant l'authentification JWT et les règles d'accès aux routes.
 package com.projet.app.configuration;
 
-
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,44 +16,51 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.projet.app.filters.JwtRequestFilter;
-
-
-@Configuration //Indique que cette classe est une configuration Spring
-@EnableWebSecurity //Active la sécurité Web fournie par Spring Security.
+import com.projet.app.services.jwt.DBUserServiceImpl;
+@Configuration
+@EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtRequestFilter jwtRequestFilter;
+    private final DBUserServiceImpl dBUserServiceImpl;
 
-    @Autowired
-    public SecurityConfig(JwtRequestFilter jwtRequestFilter) {
-        super();
+    public SecurityConfig(JwtRequestFilter jwtRequestFilter, DBUserServiceImpl dBUserServiceImpl) {
         this.jwtRequestFilter = jwtRequestFilter;
-    } //Le constructeur injecte un filtre personnalisé, JwtRequestFilter, qui intercepte les requêtes HTTP pour traiter les tokens JWT.
+        this.dBUserServiceImpl = dBUserServiceImpl;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity security) throws Exception {
-        return security.csrf(csrf -> csrf.disable()) // Désactive la protection CSRF.
+        return security.csrf(csrf -> csrf.disable())
                 .authorizeRequests()
-                .requestMatchers("/sendmail").hasRole("admin") // Autorise seulement les utilisateurs avec le rôle "admin" à accéder à "/sendmail".
-                .requestMatchers("/signup", "/login").permitAll() // Autorise l'accès à "/signup" et "/login" sans authentification.
-                .anyRequest().authenticated() // Exige une authentification pour toutes les autres requêtes.
+                .requestMatchers(HttpMethod.POST, "/api/types").permitAll()
+                .requestMatchers("/signup", "/login", "/register", "/validateCaptcha").permitAll()
+                .requestMatchers("/api/auth/**", "/api/structures/**", "/api/types/**","/api/types", "/api/structures","/api/natures/**","/api/natures").permitAll()                .anyRequest().authenticated()
                 .and()
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Configure une gestion des sessions sans état (stateless : aucune session n'est maintenue côté serveur)).
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class) // Ajoute le filtre JWT avant le filtre d'authentification.
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Utilise BCrypt pour encoder les mots de passe.
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager(); // Fournit le gestionnaire d'authentification.
+        return configuration.getAuthenticationManager();
     }
 
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(dBUserServiceImpl);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 }
