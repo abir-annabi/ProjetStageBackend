@@ -2,7 +2,7 @@ package com.projet.app.models;
 
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -25,11 +25,13 @@ public class Type {
     @Column(unique = true, updatable = false)
     private String code;
 
-    private String libelle;
+    private String libelleAr;
+    private String libelleFr;
 
     @OneToMany(mappedBy = "type", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference("structure-type") // ✔ Correspondance avec `Structure`
+    @JsonIgnoreProperties("type") // Ignore la relation inverse
     private Set<Structure> structures;
+
 
 
     // Getters and setters
@@ -49,14 +51,23 @@ public class Type {
         this.code = code;
     }
 
-    public String getLibelle() {
-        return libelle;
+    public String getLibelleAr() {
+        return libelleAr;
     }
 
-    public void setLibelle(String libelle) {
-        this.libelle = libelle;
+    public void setLibelleAr(String libelle) {
+        this.libelleAr = libelle;
     }
 
+    public String getLibelleFr() {
+        return libelleFr;
+    }
+
+    public void setLibelleFr(String libelle) {
+        this.libelleFr = libelle;
+    }
+
+    
     public Set<Structure> getStructures() {
         return structures;
     }

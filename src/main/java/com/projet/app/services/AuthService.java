@@ -13,7 +13,7 @@ public interface AuthService {
 
     DBUser getUserById(Long id);
 
-    DBUser updateUser(Long id, DBUser updatedUser);
+    public DBUser updateUser(Long id, SignUpRequest updatedUser);
 
     void deleteUser(Long id);
 

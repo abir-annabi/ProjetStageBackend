@@ -38,7 +38,9 @@ public class TypeService {
                 .orElseThrow(() -> new RuntimeException("Type not found with ID: " + id));
 
         type.setCode(typeDetails.getCode());
-        type.setLibelle(typeDetails.getLibelle());
+        type.setLibelleAr(typeDetails.getLibelleAr());
+        type.setLibelleFr(typeDetails.getLibelleFr());
+
 
         return typeRepository.save(type);
     }

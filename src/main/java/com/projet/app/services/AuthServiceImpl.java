@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.projet.app.dto.SignUpRequest;
 import com.projet.app.models.DBUser;
 import com.projet.app.models.Profile;
+import com.projet.app.models.Structure;
 import com.projet.app.repository.DBUserRepository;
 @Service
 public class AuthServiceImpl implements AuthService{
@@ -18,11 +19,13 @@ public class AuthServiceImpl implements AuthService{
 	private final DBUserRepository dbUserRepository;
 	
 	private final PasswordEncoder passwordEncoder;
+	private final StructureService structureService;
 	
 	@Autowired
-	public AuthServiceImpl(DBUserRepository dbUserRepository,PasswordEncoder passwordEncoder) {
+	public AuthServiceImpl(DBUserRepository dbUserRepository,PasswordEncoder passwordEncoder,StructureService structureService) {
 		this.dbUserRepository = dbUserRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.structureService = structureService; 
 	}
 
 	
@@ -46,7 +49,12 @@ public class AuthServiceImpl implements AuthService{
 	        profile = new Profile("user");
 	    }
 	    user.setProfile(profile);
-
+	    
+	     if (signupRequest.getStructureId() != null) {
+	            Structure structure = structureService.getStructureById(signupRequest.getStructureId())
+	                    .orElseThrow(() -> new IllegalArgumentException("Structure not found"));
+	            user.setStructure(structure);
+	        }
 	    String hashPassword = passwordEncoder.encode(signupRequest.getPassword());
 	    user.setPassword(hashPassword);
 
@@ -58,6 +66,7 @@ public class AuthServiceImpl implements AuthService{
 	@Override
 	public List<DBUser> getAllUsers() {
 	    return dbUserRepository.findAll();
+	    
 	}
 
 
@@ -67,19 +76,38 @@ public class AuthServiceImpl implements AuthService{
     }
 
     // Mettre à jour un utilisateur
-    public DBUser updateUser(Long id, DBUser updatedUser) {
-        DBUser existingUser = dbUserRepository.findById(id).orElse(null);
-        if (existingUser != null) {
+    @Override
+    public DBUser updateUser(Long id, SignUpRequest updatedUser) {
+        DBUser existingUser = dbUserRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (updatedUser.getName() != null) {
             existingUser.setName(updatedUser.getName());
-            existingUser.setEmail(updatedUser.getEmail());
-            existingUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
-            existingUser.setPhoneNumber(updatedUser.getPhoneNumber());
-            existingUser.setStructure(updatedUser.getStructure());
-            existingUser.setProfile(updatedUser.getProfile());
-            return dbUserRepository.save(existingUser);
         }
-        return null;
+        if (updatedUser.getEmail() != null) {
+            existingUser.setEmail(updatedUser.getEmail());
+        }
+        if (updatedUser.getPhoneNumber() != null) {
+            existingUser.setPhoneNumber(updatedUser.getPhoneNumber());
+        }
+        if (updatedUser.getProfile() != null) {
+            existingUser.setProfile(updatedUser.getProfile());
+        }
+        
+        
+
+        // Mettre à jour la structure si elle a changé
+        if (updatedUser.getStructureId() != null) {
+            System.out.println("ID de la structure reçue : " + updatedUser.getStructureId());
+            Structure newStructure = structureService.getStructureById(updatedUser.getStructureId())
+                    .orElseThrow(() -> new IllegalArgumentException("Structure not found"));
+            System.out.println("Structure trouvée : " + newStructure);
+            existingUser.setStructure(newStructure);
+        }
+
+
+        return dbUserRepository.save(existingUser);
     }
+
 
     // Supprimer un utilisateur
     public void deleteUser(Long id) {

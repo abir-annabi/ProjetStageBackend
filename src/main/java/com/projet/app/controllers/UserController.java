@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.projet.app.dto.SignUpRequest;
 import com.projet.app.models.DBUser;
+import com.projet.app.repository.DBUserRepository;
 import com.projet.app.services.AuthServiceImpl;
 
 
@@ -25,6 +26,7 @@ public class UserController {
 
     @Autowired
     private AuthServiceImpl userService;
+    private DBUserRepository dbUserRepository;
 
     
 
@@ -36,7 +38,7 @@ public class UserController {
 
     // Get a user by ID
     @GetMapping("/{id}")
-    public ResponseEntity<DBUser> getUserById(@PathVariable Long id) {
+    public ResponseEntity<DBUser> getUserById(@PathVariable("id") Long id) {
         DBUser user = userService.getUserById(id);
         if (user != null) {
             return ResponseEntity.ok(user);
@@ -46,13 +48,14 @@ public class UserController {
 
     // Update a user
     @PutMapping("/{id}")
-    public ResponseEntity<DBUser> updateUser(@PathVariable Long id, @RequestBody DBUser updatedUser) {
+    public ResponseEntity<DBUser> updateUser(
+            @PathVariable("id") Long id,
+            @RequestBody SignUpRequest updatedUser) {
+        
         DBUser user = userService.updateUser(id, updatedUser);
-        if (user != null) {
-            return ResponseEntity.ok(user);
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(user);
     }
+
 
     // Delete a user
     @DeleteMapping("/{id}")

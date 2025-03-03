@@ -1,7 +1,5 @@
 	package com.projet.app.models;
-	import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import jakarta.persistence.Column;
+	import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,7 +28,6 @@ import jakarta.persistence.Table;
 	
 	    @ManyToOne
 	    @JoinColumn(name = "structure_id", nullable = false)
-	    @JsonIgnore
 	    private Structure structure;
 
 	    // Ajoutez un getter pour structure_id

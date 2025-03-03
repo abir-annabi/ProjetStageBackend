@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.projet.app.dto.StructureDTO;
 import com.projet.app.models.Structure;
 import com.projet.app.services.StructureService;
 
@@ -31,7 +32,7 @@ public class StructureController {
 
     // Récupérer toutes les structures
     @GetMapping
-    public List<Structure> getAllStructures() {
+    public List<StructureDTO> getAllStructures() {
         return structureService.getAllStructures();
     }
 

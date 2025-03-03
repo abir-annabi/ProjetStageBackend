@@ -47,6 +47,9 @@ public class SignataireService {
             signataire.setTelephone(signataireDetails.getTelephone());
             signataire.setEmail(signataireDetails.getEmail());
             signataire.setActif(signataireDetails.isActif());
+            if (signataireDetails.getStructure() != null) {
+                signataire.setStructure(signataireDetails.getStructure());
+            }
             return signataireRepository.save(signataire);
         }).orElseThrow(() -> new RuntimeException("Signataire non trouvé"));
     }

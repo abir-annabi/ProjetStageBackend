@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +19,7 @@ import com.projet.app.services.SignataireService;
 
 @RestController
 @RequestMapping("/api/signataires")
-@CrossOrigin("*") // Autoriser les requêtes depuis n'importe quelle origine
+ // Autoriser les requêtes depuis n'importe quelle origine
 public class SignataireController {
 
     @Autowired
@@ -40,7 +39,7 @@ public class SignataireController {
 
     // Récupérer un signataire par ID
     @GetMapping("/{id}")
-    public ResponseEntity<Signataire> getSignataireById(@PathVariable Long id) {
+    public ResponseEntity<Signataire> getSignataireById(@PathVariable("id") Long id) {
         Optional<Signataire> signataire = signataireService.getSignataireById(id);
         return signataire.map(ResponseEntity::ok)
                          .orElseGet(() -> ResponseEntity.notFound().build());
@@ -48,7 +47,7 @@ public class SignataireController {
 
     // Récupérer un signataire par CMNPS
     @GetMapping("/cmpps/{cmpps}")
-    public ResponseEntity<Signataire> getSignataireByCmpps(@PathVariable String cmpps) {
+    public ResponseEntity<Signataire> getSignataireByCmpps(@PathVariable("cmpps") String cmpps) {
         Optional<Signataire> signataire = signataireService.getSignataireByCmpps(cmpps);
         return signataire.map(ResponseEntity::ok)
                          .orElseGet(() -> ResponseEntity.notFound().build());
@@ -56,13 +55,13 @@ public class SignataireController {
 
     // Modifier un signataire
     @PutMapping("/{id}")
-    public ResponseEntity<Signataire> updateSignataire(@PathVariable Long id, @RequestBody Signataire signataireDetails) {
+    public ResponseEntity<Signataire> updateSignataire(@PathVariable("id") Long id, @RequestBody Signataire signataireDetails) {
         return ResponseEntity.ok(signataireService.updateSignataire(id, signataireDetails));
     }
 
     // Supprimer un signataire
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSignataire(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteSignataire(@PathVariable("id") Long id) {
         signataireService.deleteSignataire(id);
         return ResponseEntity.noContent().build();
     }

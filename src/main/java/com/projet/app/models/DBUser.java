@@ -6,10 +6,11 @@ import java.util.Collections;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,10 +18,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
 @Table(name = "dbuser")
-
+@Data
 public class DBUser implements UserDetails {
 
     @Id
@@ -35,10 +37,11 @@ public class DBUser implements UserDetails {
     private String verificationCode;
     private String phoneNumber;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "structure_id")
-    @JsonBackReference("structure-users") // ✔ Correspondance avec `@JsonManagedReference` dans `Structure`
+    @JsonIgnoreProperties("users") // Ignore la relation inverse
     private Structure structure;
+
 
 
     // Getters and setters

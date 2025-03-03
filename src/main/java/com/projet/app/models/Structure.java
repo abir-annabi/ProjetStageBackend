@@ -2,8 +2,8 @@ package com.projet.app.models;
 
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -17,7 +17,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-
 @Entity
 @Table(name = "structure")
 public class Structure {
@@ -34,26 +33,22 @@ public class Structure {
     private String adresse;
 
     @OneToMany(mappedBy = "structure", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference("structure-users") 
+    @JsonIgnoreProperties("structure") // Ignore la relation inverse
     private Set<DBUser> users;
 
     @ManyToOne
-    @JoinColumn(name = "parentStructure")
-    @JsonIgnoreProperties("childStructures") // Remplace @JsonBackReference// ✔ Correction
-    private Structure parentStructure;
-
-    @OneToMany(mappedBy = "parentStructure", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference("structure-parent") // ✔ Correction : Correspondance avec `parentStructure`
-    private Set<Structure> childStructures;
-
-    @ManyToOne
     @JoinColumn(name = "type_id")
-    @JsonIgnoreProperties("structures") // Remplace @JsonBackReference
+    @JsonIgnoreProperties("structures") // Ignore la relation inverse
     private Type type;
 
-    @OneToMany(mappedBy = "structure", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference("structure-signataires")
-    private Set<Signataire> signataires;
+    
+    @ManyToOne
+    @JoinColumn(name = "parent_structure_id")
+    @JsonBackReference // Indique que cette relation est gérée ailleurs
+    private Structure parentStructure;
+
+
+ 
 
 
     // Getters and setters
@@ -95,6 +90,28 @@ public class Structure {
     public void setLibelleAr(String libelleAr) {
         this.libelleAr = libelleAr;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     public String getLibelleFr() {
         return libelleFr;
@@ -128,11 +145,5 @@ public class Structure {
         this.parentStructure = parentStructure;
     }
 
-    public Set<Structure> getChildStructures() {
-        return childStructures;
-    }
-
-    public void setChildStructures(Set<Structure> childStructures) {
-        this.childStructures = childStructures;
-    }
+ 
 }

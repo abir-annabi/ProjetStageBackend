@@ -10,14 +10,22 @@ public class SignUpRequest {
     private String name;
     private Profile profile;
     private String phoneNumber;
-
+    private Long structureId;
     public String getPhoneNumber() {
         return phoneNumber;
     }
 
+    public Long getStructureId() {
+        return structureId;
+    }
+
+    public void setStructureId(Long structureId) {
+        this.structureId = structureId;
+    }
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
+    
     
     // Getter for email
     public String getEmail() {
